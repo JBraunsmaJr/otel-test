@@ -5,9 +5,13 @@ from http import HTTPMethod
 import httpx
 import uvicorn
 from fastapi import FastAPI
-from common.tracing import setup_tracing, TracingMiddleware, traced_http, traced_function
+from common.tracing import setup_tracing, TracingMiddleware, traced_http, traced_function, log_with_trace, setup_logging
 import time
 import random
+import logging
+
+logger = setup_logging(endpoint="http://jaeger:4317/v1/traces")
+logger.setLevel(logging.DEBUG)
 
 
 SERVICE_NAME = os.environ.get("SERVICE_NAME")
@@ -38,12 +42,16 @@ async def say_hello(name: str):
 
 @app.get("/random")
 async def test_random():
+    log_with_trace("Starting random thing")
     do_some_work()
     return {"message": "YES"}
 
 @traced_function
 def do_some_work():
-    time.sleep(random.uniform(0.5, 2.5))
+    log_with_trace("This is a message")
+    wait_time = random.uniform(0.5, 2.5)
+    time.sleep(wait_time)
+    log_with_trace("Wait period", wait_time=wait_time)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
