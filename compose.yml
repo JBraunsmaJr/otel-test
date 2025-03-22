@@ -1,0 +1,37 @@
+networks:
+  service-network:
+
+services:
+  main:
+    image: test-service
+    build:
+      context: .
+    hostname: main
+    networks:
+      - service-network
+    ports:
+      - 8000:8000
+    environment:
+      SERVICE_NAME: "MAIN"
+      INVOKE: "http://service-b:8000/random"
+
+  secondary:
+    image: test-service
+    hostname: service-b
+    networks:
+      - service-network
+    expose:
+      - 8000
+    environment:
+      SERVICE_NAME: "SECONDARY"
+
+  jaeger:
+    image: jaegertracing/jaeger
+    hostname: jaeger
+    ports:
+      - 4317:4317
+      - 3000:16686
+    expose:
+      - 4317
+    networks:
+      - service-network
